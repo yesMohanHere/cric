@@ -1,0 +1,206 @@
+/* General App Styling */
+.App {
+  text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  background-color: #004080; /* Deeper cricket blue */
+  padding: 20px 0;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.2em;
+  font-weight: 600;
+}
+
+main {
+  flex-grow: 1;
+  padding: 25px;
+  max-width: 800px;
+  margin: 0 auto; /* Center content */
+  width: 100%;
+}
+
+/* Common Card Styling for Components */
+.card {
+  background-color: #ffffff;
+  padding: 20px;
+  margin-top: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  text-align: left;
+}
+
+.card h2, .card h3 {
+  color: #004080;
+  margin-top: 0;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+/* Button Styling */
+button {
+  padding: 12px 20px;
+  background-color: #007bff; /* Primary blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.2s ease-in-out;
+  margin: 5px;
+}
+
+button:hover {
+  background-color: #0056b3; /* Darker blue */
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+button.secondary {
+ background-color: #6c757d; /* Grey */
+}
+
+button.secondary:hover {
+  background-color: #545b62;
+}
+
+button.warning {
+  background-color: #ffc107; /* Yellow */
+  color: #212529;
+}
+
+button.warning:hover {
+  background-color: #e0a800;
+}
+
+
+/* Input Styling */
+input[type="file"] {
+  display: block;
+  margin: 15px auto 20px; /* Center the file input */
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+}
+
+/* Message Styling */
+.message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.message.info {
+  background-color: #e2e3e5;
+  color: #383d41;
+  border: 1px solid #d6d8db;
+}
+
+
+/* Component Specific Styling */
+
+/* VideoUpload.js */
+.video-upload-container .card { /* Apply card style */
+  text-align: center; /* Center content within the upload card */
+}
+
+/* AnalysisControls.js */
+.analysis-controls { /* This is already a card if it has className="card" */
+  /* Specific styles if needed */
+}
+.analysis-controls p {
+  font-size: 1.1em;
+  margin-bottom: 15px;
+}
+.analysis-status-loading {
+  color: #007bff;
+  font-weight: bold;
+}
+.analysis-status-complete {
+  color: #28a745; /* Green */
+  font-weight: bold;
+}
+.analysis-status-error {
+  color: #dc3545; /* Red */
+  font-weight: bold;
+}
+
+
+/* ResultsDisplay.js */
+.results-display { /* This is already a card if it has className="card" */
+  /* Specific styles if needed */
+}
+.results-display label {
+  margin-right: 10px;
+  font-weight: 500;
+}
+.results-display select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  min-width: 200px; /* Give select some width */
+}
+.results-display .highlight-button-container {
+  margin-top: 15px;
+  text-align: right;
+}
+
+/* VideoPlayer.js */
+.video-player { /* This is already a card if it has className="card" */
+  margin-top: 25px;
+}
+.video-player video {
+  max-width: 100%;
+  height: auto;
+  border-radius: 5px;
+  background-color: #000; /* Black background for video player */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Loading Spinner (Optional - for future use if needed) */
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #007bff;
+  animation: spin 1s ease infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
