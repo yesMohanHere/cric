@@ -76,6 +76,10 @@ DATA_DIR.mkdir(exist_ok=True)
 with input_path.open("r", encoding="utf-8") as f:
     transcript = json.load(f)
 
+# Exponential back-off variables
+backoff_sec = 1.0  # initial delay in seconds
+max_backoff_sec = 10.0  # maximum delay cap
+
 labeled_transcript = []
 
 # Loop through each line and send to Ollama
@@ -114,9 +118,14 @@ for i, item in enumerate(transcript):
 
         print(f"[{i+1}/{len(transcript)}] {label} <- {text}")
 
-        time.sleep(1)  # Delay to avoid overloading
+        # Exponential back-off to respect rate limits
+        time.sleep(backoff_sec)
+        backoff_sec = min(backoff_sec * 1.5, max_backoff_sec)
     except Exception as e:
         print(f"Error labeling: {text}\n{e}")
+        # On error, also back-off
+        time.sleep(backoff_sec)
+        backoff_sec = min(backoff_sec * 1.5, max_backoff_sec)
         continue
 
 # Save to JSON

@@ -45,17 +45,26 @@ export const startAnalysis = (videoId) => {
 export const getAnalysisStatus = (jobId) => {
   console.log('API Service: Getting status for job ID:', jobId);
   return new Promise((resolve) => {
-    // Simulate polling - first time it's processing, second time it's complete
-    const randomDelay = Math.random() * 2000 + 1000; // 1 to 3 seconds
+    // Ensure each job completes after a few polls to avoid infinite loops
+    const randomDelay = Math.random() * 1000 + 500; // 0.5 – 1.5 s
+
+    // Track how many times we've been asked about this job ID
+    if (!getAnalysisStatus.__pollCount) {
+      getAnalysisStatus.__pollCount = {};
+    }
+    const pollCountMap = getAnalysisStatus.__pollCount;
+    pollCountMap[jobId] = (pollCountMap[jobId] || 0) + 1;
+
     setTimeout(() => {
-      // Simulate a chance of still processing vs complete
-      if (Math.random() > 0.3) { // 70% chance of still processing for demo
-        console.log('API Service: Analysis still processing for job ID:', jobId);
+      if (pollCountMap[jobId] < 3) {
+        console.log('API Service: Analysis still processing for job ID:', jobId, 'Poll #', pollCountMap[jobId]);
         resolve({ status: 'processing', labels: [] });
       } else {
         const mockLabels = ['SIX', 'FOUR', 'WICKET', 'DOT BALL', 'COMMENTARY', 'RUN OUT', 'APPEAL'];
         console.log('API Service: Analysis complete for job ID:', jobId, 'Labels:', mockLabels);
         resolve({ status: 'complete', labels: mockLabels });
+        // Cleanup to keep map small
+        delete pollCountMap[jobId];
       }
     }, randomDelay);
   });

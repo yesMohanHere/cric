@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import VideoUpload from './components/VideoUpload';
 import AnalysisControls from './components/AnalysisControls';
@@ -16,16 +16,16 @@ function App() {
   const [highlightVideoUrl, setHighlightVideoUrl] = useState('');
   const [selectedLabelForPlayer, setSelectedLabelForPlayer] = useState(''); // To pass to VideoPlayer
   const [isLoadingHighlights, setIsLoadingHighlights] = useState(false);
-  const [pollingIntervalId, setPollingIntervalId] = useState(null);
+  const pollingIntervalRef = useRef(null);
 
   // Cleanup polling on component unmount
   useEffect(() => {
     return () => {
-      if (pollingIntervalId) {
-        clearInterval(pollingIntervalId);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [pollingIntervalId]);
+  }, []);
 
   const pollAnalysisStatus = useCallback(async (jobId) => {
     if (!jobId) return;
@@ -36,35 +36,51 @@ function App() {
         setAnalysisStatus('complete');
         setAvailableLabels(response.labels || []);
         setCurrentJobId(null);
-        if (pollingIntervalId) clearInterval(pollingIntervalId);
-        setPollingIntervalId(null);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
       } else if (response.status === 'processing') {
         setAnalysisStatus('polling');
       } else {
         setAnalysisStatus('error');
         console.error("Analysis failed or unknown status:", response);
-        if (pollingIntervalId) clearInterval(pollingIntervalId);
-        setPollingIntervalId(null);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
       }
     } catch (error) {
       console.error('Error polling analysis status:', error);
       setAnalysisStatus('error');
-      if (pollingIntervalId) clearInterval(pollingIntervalId);
-      setPollingIntervalId(null);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     }
-  }, [pollingIntervalId]);
-
+  }, []);
 
   useEffect(() => {
-    if (analysisStatus === 'polling' && currentJobId) {
-      const intervalId = setInterval(() => {
+    if (analysisStatus === 'polling' && currentJobId && !pollingIntervalRef.current) {
+      pollingIntervalRef.current = setInterval(() => {
         pollAnalysisStatus(currentJobId);
       }, 3000);
-      setPollingIntervalId(intervalId);
-      return () => clearInterval(intervalId);
     }
-  }, [analysisStatus, currentJobId, pollAnalysisStatus]);
 
+    // If status transitions away from polling, clear any existing interval.
+    if (analysisStatus !== 'polling' && pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+
+    // Cleanup on dependency change
+    return () => {
+      if (pollingIntervalRef.current && analysisStatus !== 'polling') {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [analysisStatus, currentJobId, pollAnalysisStatus]);
 
   const handleVideoUploadSuccess = ({ videoId, fileName, originalFile }) => {
     setUploadedVideoInfo({ videoId, fileName });
@@ -74,7 +90,10 @@ function App() {
     setHighlightVideoUrl('');
     setSelectedLabelForPlayer('');
     setCurrentJobId(null);
-    if (pollingIntervalId) clearInterval(pollingIntervalId);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
   };
 
   const handleStartAnalysis = async () => {
@@ -128,9 +147,9 @@ function App() {
     setHighlightVideoUrl('');
     setSelectedLabelForPlayer('');
     setIsLoadingHighlights(false);
-    if (pollingIntervalId) {
-      clearInterval(pollingIntervalId);
-      setPollingIntervalId(null);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
   };
 
