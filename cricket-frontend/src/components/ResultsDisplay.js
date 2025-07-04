@@ -8,7 +8,7 @@ function ResultsDisplay({ videoId, availableLabels, onGetHighlights, isLoadingHi
     if (availableLabels && availableLabels.length > 0 && !availableLabels.includes(selectedLabel)) {
       setSelectedLabel(''); // Reset if current selection is no longer valid or on initial load
     }
-  }, [availableLabels, selectedLabel]);
+  }, [availableLabels]);
 
 
   const handleLabelChange = (event) => {
@@ -50,7 +50,7 @@ function ResultsDisplay({ videoId, availableLabels, onGetHighlights, isLoadingHi
         <button
           onClick={handleFetchHighlights}
           disabled={!selectedLabel || isLoadingHighlights}
-          className="primary" // Assuming primary is your default button style
+          className="primary" /* Assuming primary is your default button style */
         >
           {isLoadingHighlights ? 'Loading Highlights...' : 'Get Highlights Clip'}
         </button>

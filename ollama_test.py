@@ -1,91 +1,20 @@
-# # import requests
+"""Cricket commentary classification script.
 
-# # commentary = [
-# #     "What a delivery! Clean bowled.",
-# #     "He pulls that for a boundary.",
-# #     "No ball signaled by the umpire.",
-# #     "Drinks break now.",
-# #     "That's high and handsome – SIX!"
-# # ]
+This version is platform-independent (uses relative paths by default) and correctly
+handles multi-word labels such as "RUN OUT" or "NO BALL".
 
-# # prompt = f"""Label the following cricket commentary with one of these: [SIX, FOUR, WICKET, LBW, EXTRA, BREAK, OTHER].
+Usage (example):
+    python ollama_test.py transcript_clean.json output_labels.json
 
-# # Commentary: "{commentary}"
+If no arguments are supplied the script falls back to `data/transcript_clean.json`
+and writes results to `data/transcript_labeled.json` relative to the repo root.
+"""
 
-# # Just respond with the label only."""
-
-# # response = requests.post(
-# #     "http://localhost:11434/api/generate",
-# #     json={
-# #         "model": "deepseek-r1:7b",
-# #         "prompt": prompt,
-# #         "stream": False
-# #     }
-# # )
-
-# # label = response.json()["response"].strip()
-# # print(f"📄 Commentary: {commentary}")
-# # print(f"📌 Predicted Label: {label}")
-
-# #####################################################################################################
-# # import json
-# # import requests
-# # import time
-
-# # # Load cleaned transcript
-# # with open(r"C:\Users\HILCPS\Downloads\transcript_clean.json", "r", encoding="utf-8") as f:
-# #     transcript = json.load(f)
-
-# # labeled_transcript = []
-
-# # # Loop through each line and send to Ollama
-# # for i, item in enumerate(transcript):
-# #     text = item["text"]
-# #     #prompt = f'Label the following cricket commentary: "{text}"'
-# #     prompt = (
-# #     f"Label the following cricket commentary into one word from this list:\n"
-# #     f"['SIX', 'FOUR', 'WICKET','LBW', 'BREAK', 'EXTRA', 'DOT BALL','SINGLE', 'DOUBLE','RUN OUT','WIDE','STRATEGY BREAK', 'COMMENTARY', 'UNKNOWN'].\n"
-# #     f"Only reply with one of the labels.\n\n"
-# #     f"Commentary: \"{text}\""
-# # )
-
-
-# #     try:
-# #         response = requests.post(
-# #             "http://localhost:11434/api/generate",
-# #             json={
-# #                 "model": "deepseek-r1:32b",  # or any model you’ve listed
-# #                 "prompt": prompt,
-# #                 "stream": False
-# #             }
-# #         )
-# #         label = response.json()["response"].strip()
-
-# #         # Append labeled entry
-# #         labeled_transcript.append({
-# #             "start": item["start"],
-# #             "end": item["end"],
-# #             "text": text,
-# #             "label": label
-# #         })
-
-# #         print(f"[{i+1}/{len(transcript)}] {label} <- {text}")
-
-# #         time.sleep(1)  # Small delay to avoid overloading
-# #     except Exception as e:
-# #         print(f"Error labeling: {text}\n{e}")
-# #         continue
-
-# # # Save labeled transcript
-# # with open(r"C:\Users\HILCPS\Downloads\transcript_labeled.json", "w", encoding="utf-8") as f:
-# #     json.dump(labeled_transcript, f, indent=4, ensure_ascii=False)
-
-# # print("\n✅ Labeled transcript saved as transcript_labeled.json")
-
-# ###############################################################################################
+from pathlib import Path
 import json
 import requests
 import time
+import sys
 
 # Predefined labels (strict filter)
 
@@ -127,9 +56,24 @@ VALID_LABELS = [
     'WEATHER INTERRUPTION'   # Rain, light, etc.
 ]
 
+# ---------------------------------------------------------------------------
+# Resolve paths (use CLI args or sensible defaults)
+# ---------------------------------------------------------------------------
+
+DATA_DIR = Path(__file__).resolve().parent / "data"
+DEFAULT_INPUT = DATA_DIR / "transcript_clean.json"
+DEFAULT_OUTPUT_JSON = DATA_DIR / "transcript_labeled.json"
+DEFAULT_OUTPUT_CSV = DATA_DIR / "transcript_labeled.csv"
+
+input_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_INPUT
+output_json_path = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_OUTPUT_JSON
+output_csv_path = Path(sys.argv[3]) if len(sys.argv) > 3 else DEFAULT_OUTPUT_CSV
+
+# Ensure data directory exists
+DATA_DIR.mkdir(exist_ok=True)
 
 # Load cleaned transcript
-with open(r"C:\Users\HILCPS\Downloads\transcript_clean_p8209.json", "r", encoding="utf-8") as f:
+with input_path.open("r", encoding="utf-8") as f:
     transcript = json.load(f)
 
 labeled_transcript = []
@@ -137,8 +81,6 @@ labeled_transcript = []
 # Loop through each line and send to Ollama
 for i, item in enumerate(transcript):
     text = item["text"]
-    # previous_line = transcript[i - 1]["text"] if i > 0 else ""
-    # next_line = transcript[i + 1]["text"] if i < len(transcript) - 1 else ""
     prompt = (
         f"You are a cricket commentary classification assistant.\n\n"
         f"Label the following cricket commentary into one word from this list:\n"
@@ -147,35 +89,20 @@ for i, item in enumerate(transcript):
         f"- Focus on the 'Target Commentary' line. Use context only to disambiguate meaning if necessary apply some sentiment analysis to predict the labels.\n"
         f"Commentary: \"{text}\""
     )
-    # prompt = (
-    #     f"You are a cricket commentary classification assistant.\n\n"
-    #     f"Given a line of cricket commentary (with optional context), classify the target line using exactly **one label** from the following list:\n\n"
-    #     f"{VALID_LABELS}\n\n"
-    #     f"Instructions:\n"
-    #     f"- Only respond with **one label**, exactly as written in the list above.\n"
-    #     f"- Focus on the 'Target Commentary' line. Use context only to disambiguate meaning.\n"
-    #     f"- Do not explain your answer. Just return the label.\n\n"
-    #     f"Context Before: \"{previous_line}\"\n"
-    #     f"Target Commentary: \"{text}\"\n"
-    #     f"Context After: \"{next_line}\""
-    # )
-
 
     try:
         response = requests.post(
             "http://localhost:11434/api/generate",
             json={
-               # "model": "deepseek-r1:32b",
                 "model": "llama3.3:latest",
-                
                 "prompt": prompt,
                 "stream": False
             }
         )
         raw_label = response.json()["response"].strip().upper()
 
-        # Extract only valid label
-        label = next((lbl for lbl in VALID_LABELS if lbl in raw_label.split()), "UNKNOWN")
+        # Use exact match to accommodate multi-word labels
+        label = raw_label if raw_label in VALID_LABELS else "UNKNOWN"
 
         # Append labeled entry
         labeled_transcript.append({
@@ -193,25 +120,18 @@ for i, item in enumerate(transcript):
         continue
 
 # Save to JSON
-with open(r"C:\Users\HILCPS\Downloads\transcript_promptsenti_llama3_labels_p8209.json", "w", encoding="utf-8") as f:
+with output_json_path.open("w", encoding="utf-8") as f:
     json.dump(labeled_transcript, f, indent=4, ensure_ascii=False)
 
 print("\n✅ Labeled transcript saved as transcript_promptsenti_llama3_labels_p8209.json")
-import json
+
 import csv
 
-# Load labeled JSON
-input_path = r"C:\Users\HILCPS\Downloads\transcript_promptsenti_llama3_labels_p8209.json"
-output_path = r"C:\Users\HILCPS\Downloads\transcript_promptsenti_llama3_labels_p8209.csv"
-
-with open(input_path, "r", encoding="utf-8") as f:
-    data = json.load(f)
-
 # Write to CSV
-with open(output_path, "w", newline='', encoding="utf-8") as csvfile:
+with output_csv_path.open("w", newline="", encoding="utf-8") as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=["start", "end", "text", "label"])
     writer.writeheader()
-    for item in data:
+    for item in labeled_transcript:
         writer.writerow(item)
 
-print("✅ CSV saved to:", output_path)
+print("✅ CSV saved to:", output_csv_path)
